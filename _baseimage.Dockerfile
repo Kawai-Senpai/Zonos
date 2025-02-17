@@ -6,6 +6,6 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY . ./
+COPY pyproject.toml uv.lock ./
 
 RUN uv pip install --system -e . && uv pip install --system -e .[compile]

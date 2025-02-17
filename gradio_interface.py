@@ -5,7 +5,8 @@ from os import getenv
 
 from zonos.model import Zonos, DEFAULT_BACKBONE_CLS as ZonosBackbone
 from zonos.conditioning import make_cond_dict, supported_language_codes
-from zonos.utils import DEFAULT_DEVICE as device
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 CURRENT_MODEL_TYPE = None
 CURRENT_MODEL = None
