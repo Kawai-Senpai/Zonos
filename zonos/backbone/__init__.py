@@ -1,6 +1,7 @@
 import torch
+from config import device
 
-USING_CPU = torch.device("cuda" if torch.cuda.is_available() else "cpu").type == 'cpu'
+USING_CPU = device.type == 'cpu'
 
 if not USING_CPU:
     try:

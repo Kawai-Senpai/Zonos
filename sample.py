@@ -3,8 +3,7 @@ import torchaudio
 from zonos.model import Zonos
 from zonos.conditioning import make_cond_dict
 import time
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
+from config import device
 
 start_time = time.time()
 print("Loading model...")

@@ -8,6 +8,7 @@ import torchaudio
 from huggingface_hub import hf_hub_download
 
 from zonos.utils import DEFAULT_DEVICE
+from config import cache_dir
 
 
 class logFbankCal(nn.Module):
@@ -391,10 +392,12 @@ class SpeakerEmbeddingLDA(nn.Module):
         spk_model_path = hf_hub_download(
             repo_id="Zyphra/Zonos-v0.1-speaker-embedding",
             filename="ResNet293_SimAM_ASP_base.pt",
+            cache_dir=cache_dir
         )
         lda_spk_model_path = hf_hub_download(
             repo_id="Zyphra/Zonos-v0.1-speaker-embedding",
             filename="ResNet293_SimAM_ASP_base_LDA-128.pt",
+            cache_dir=cache_dir
         )
 
         self.device = device

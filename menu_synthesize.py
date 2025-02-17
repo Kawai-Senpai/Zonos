@@ -2,6 +2,7 @@ import torch
 import torchaudio
 from zonos.model import Zonos
 from zonos.conditioning import make_cond_dict
+from config import device
 
 def get_input(prompt, default=None, conv=str):
     inp = input(f"{prompt} [{default if default is not None else ''}]: ")
@@ -29,7 +30,7 @@ def main_menu():
 
 def synthesize_audio():
     # Model/general settings
-    model_repo = get_input("Enter model repo id", "Zyphra/Zonos-v0.1-torch", str)
+    model_repo = get_input("Enter model repo id", "Zyphra/Zonos-v0.1-transformer", str)
     text = get_input("Enter text to synthesize", None, str)
     language = get_input("Enter language code", "en-us", str)
     
@@ -70,7 +71,6 @@ def synthesize_audio():
     
     speaker_noised = get_input("Denoise speaker? (yes/no)", "no", str).lower() in ("yes", "y")
     
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     if randomize_seed:
         seed = torch.randint(0, 2**32 - 1, (1,)).item()
     torch.manual_seed(seed)

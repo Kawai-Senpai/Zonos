@@ -14,8 +14,10 @@ from zonos.config import InferenceParams, ZonosConfig
 from zonos.sampling import sample_from_logits
 from zonos.speaker_cloning import SpeakerEmbeddingLDA
 from zonos.utils import DEFAULT_DEVICE, find_multiple, pad_weight_
+from config import device, cache_dir
+import os
 
-USING_CPU = torch.device("cuda" if torch.cuda.is_available() else "cpu").type == 'cpu'
+USING_CPU = device.type == 'cpu'
 
 # Initialize BACKBONES with the TorchZonosBackbone
 from .backbone import TorchZonosBackbone
@@ -37,7 +39,7 @@ class Zonos(nn.Module):
         self.eos_token_id = config.eos_token_id
         self.masked_token_id = config.masked_token_id
 
-        self.autoencoder = DACAutoencoder()
+        self.autoencoder = DACAutoencoder(cache_dir=cache_dir)
         self.backbone = backbone_cls(config.backbone)
         self.prefix_conditioner = PrefixConditioner(config.prefix_conditioner, dim)
         self.spk_clone_model = None
@@ -66,8 +68,12 @@ class Zonos(nn.Module):
 
     @classmethod
     def from_pretrained(
-        cls, repo_id: str, revision: str | None = None, device: str = DEFAULT_DEVICE, cache_dir: str | None = "models", **kwargs
+        cls, repo_id: str, revision: str | None = None, device: str = DEFAULT_DEVICE, cache_dir: str | None = None, **kwargs
     ) -> "Zonos":
+        if cache_dir is None:
+            from config import cache_dir
+        cache_dir = os.path.abspath(cache_dir)
+        os.makedirs(cache_dir, exist_ok=True)
         config_path = hf_hub_download(repo_id=repo_id, filename="config.json", revision=revision, cache_dir=cache_dir)
         model_path = hf_hub_download(repo_id=repo_id, filename="model.safetensors", revision=revision, cache_dir=cache_dir)
         return cls.from_local(config_path, model_path, device, **kwargs)
@@ -242,10 +248,12 @@ class Zonos(nn.Module):
         prefix_audio_len = 0 if audio_prefix_codes is None else audio_prefix_codes.shape[2]
         device = self.device
 
-        # Use CUDA Graphs if supported, and torch.compile otherwise.
+        # Use CUDA Graphs if supported; bypass torch.compile on CPU.
         cg = self.can_use_cudagraphs()
-        decode_one_token = self._decode_one_token
-        decode_one_token = torch.compile(decode_one_token, dynamic=True, disable=cg or disable_torch_compile)
+        if disable_torch_compile or device.type != "cuda":
+            decode_one_token = self._decode_one_token
+        else:
+            decode_one_token = torch.compile(self._decode_one_token, dynamic=True)
 
         unknown_token = -1
         audio_seq_len = prefix_audio_len + max_new_tokens

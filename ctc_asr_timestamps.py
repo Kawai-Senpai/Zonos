@@ -1,15 +1,13 @@
 import os
 import torch
 import torchaudio
+from config import device
 
 # Set up model cache directory in the project folder
 models_dir = os.path.abspath("models")
 os.environ["TORCH_HOME"] = models_dir
 torch.hub.set_dir(models_dir)
 os.makedirs(models_dir, exist_ok=True)
-
-# Choose device: GPU if available, else CPU.
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the pre-trained ASR pipeline (Wav2Vec2 ASR Base 960H) from torchaudio.
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H

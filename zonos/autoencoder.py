@@ -1,14 +1,18 @@
 import math
+import os
 
 import torch
 import torchaudio
 from transformers.models.dac import DacModel
+from config import cache_dir
 
 
 class DACAutoencoder:
-    def __init__(self):
+    def __init__(self, cache_dir: str = "models"):
         super().__init__()
-        self.dac = DacModel.from_pretrained("descript/dac_44khz")
+        cache_dir = os.path.abspath(cache_dir)
+        os.makedirs(cache_dir, exist_ok=True)
+        self.dac = DacModel.from_pretrained("descript/dac_44khz", cache_dir=cache_dir)
         self.dac.eval().requires_grad_(False)
         self.codebook_size = self.dac.config.codebook_size
         self.num_codebooks = self.dac.quantizer.n_codebooks

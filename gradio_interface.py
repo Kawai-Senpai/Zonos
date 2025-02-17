@@ -2,12 +2,11 @@ import torch
 import torchaudio
 import gradio as gr
 from os import getenv
+from config import device
 
 from zonos.model import Zonos, DEFAULT_BACKBONE_CLS as ZonosBackbone
 from zonos.conditioning import supported_language_codes, make_cond_dict  # Added make_cond_dict
 
-# Force CPU if CUDA is not available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 USING_CPU = device.type == 'cpu'
 
 CURRENT_MODEL_TYPE = None
