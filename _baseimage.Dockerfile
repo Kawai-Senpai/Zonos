@@ -9,3 +9,5 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 RUN uv pip install --system -e . && uv pip install --system -e .[compile]
+
+COPY models/ models/
