@@ -4,25 +4,27 @@ import gradio as gr
 from os import getenv
 
 from zonos.model import Zonos, DEFAULT_BACKBONE_CLS as ZonosBackbone
-from zonos.conditioning import make_cond_dict, supported_language_codes
+from zonos.conditioning import supported_language_codes, make_cond_dict  # Added make_cond_dict
 
+# Force CPU if CUDA is not available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+USING_CPU = device.type == 'cpu'
 
 CURRENT_MODEL_TYPE = None
 CURRENT_MODEL = None
 
-SPEAKER_EMBEDDING = None
+SPEAKER_EMBEDDING = None 
 SPEAKER_AUDIO_PATH = None
-
 
 def load_model_if_needed(model_choice: str):
     global CURRENT_MODEL_TYPE, CURRENT_MODEL
     if CURRENT_MODEL_TYPE != model_choice:
         if CURRENT_MODEL is not None:
             del CURRENT_MODEL
-            torch.cuda.empty_cache()
+            if not USING_CPU:
+                torch.cuda.empty_cache()
         print(f"Loading {model_choice} model...")
-        CURRENT_MODEL = Zonos.from_pretrained(model_choice, device=device)
+        CURRENT_MODEL = Zonos.from_pretrained(model_choice, device=device, cache_dir="models")
         CURRENT_MODEL.requires_grad_(False).eval()
         CURRENT_MODEL_TYPE = model_choice
         print(f"{model_choice} model loaded successfully!")
@@ -195,17 +197,14 @@ def generate_audio(
 
 
 def build_interface():
-    supported_models = []
-    if "transformer" in ZonosBackbone.supported_architectures:
-        supported_models.append("Zyphra/Zonos-v0.1-transformer")
-
-    if "hybrid" in ZonosBackbone.supported_architectures:
-        supported_models.append("Zyphra/Zonos-v0.1-hybrid")
-    else:
-        print(
-            "| The current ZonosBackbone does not support the hybrid architecture, meaning only the transformer model will be available in the model selector.\n"
-            "| This probably means the mamba-ssm library has not been installed."
-        )
+    supported_models = ["Zyphra/Zonos-v0.1-torch"]
+    
+    if not USING_CPU:
+        # Only add hybrid model if GPU is available and hybrid architecture is supported
+        if "hybrid" in ZonosBackbone.supported_architectures:
+            supported_models.append("Zyphra/Zonos-v0.1-hybrid")
+        else:
+            print("Hybrid architecture not available even with GPU - check Mamba installation")
 
     with gr.Blocks() as demo:
         with gr.Row():

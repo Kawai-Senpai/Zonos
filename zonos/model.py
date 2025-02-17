@@ -8,7 +8,6 @@ from huggingface_hub import hf_hub_download
 from tqdm import tqdm
 
 from zonos.autoencoder import DACAutoencoder
-from zonos.backbone import BACKBONES
 from zonos.codebook_pattern import apply_delay_pattern, revert_delay_pattern
 from zonos.conditioning import PrefixConditioner
 from zonos.config import InferenceParams, ZonosConfig
@@ -16,8 +15,19 @@ from zonos.sampling import sample_from_logits
 from zonos.speaker_cloning import SpeakerEmbeddingLDA
 from zonos.utils import DEFAULT_DEVICE, find_multiple, pad_weight_
 
-DEFAULT_BACKBONE_CLS = next(iter(BACKBONES.values()))
+USING_CPU = torch.device("cuda" if torch.cuda.is_available() else "cpu").type == 'cpu'
 
+# Initialize BACKBONES with the TorchZonosBackbone
+from .backbone import TorchZonosBackbone
+BACKBONES = {"torch": TorchZonosBackbone}
+DEFAULT_BACKBONE_CLS = TorchZonosBackbone  # Set a default
+
+if not USING_CPU:
+    try:
+        from .backbone import MambaSSMZonosBackbone
+        BACKBONES["mamba_ssm"] = MambaSSMZonosBackbone
+    except ImportError:
+        print("Mamba-SSM not installed, hybrid models will be unavailable.")
 
 class Zonos(nn.Module):
     def __init__(self, config: ZonosConfig, backbone_cls=DEFAULT_BACKBONE_CLS):
@@ -56,10 +66,10 @@ class Zonos(nn.Module):
 
     @classmethod
     def from_pretrained(
-        cls, repo_id: str, revision: str | None = None, device: str = DEFAULT_DEVICE, **kwargs
+        cls, repo_id: str, revision: str | None = None, device: str = DEFAULT_DEVICE, cache_dir: str | None = "models", **kwargs
     ) -> "Zonos":
-        config_path = hf_hub_download(repo_id=repo_id, filename="config.json", revision=revision)
-        model_path = hf_hub_download(repo_id=repo_id, filename="model.safetensors", revision=revision)
+        config_path = hf_hub_download(repo_id=repo_id, filename="config.json", revision=revision, cache_dir=cache_dir)
+        model_path = hf_hub_download(repo_id=repo_id, filename="model.safetensors", revision=revision, cache_dir=cache_dir)
         return cls.from_local(config_path, model_path, device, **kwargs)
 
     @classmethod

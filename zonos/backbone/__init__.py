@@ -1,12 +1,25 @@
-BACKBONES = {}
+import torch
 
-try:
-    from ._mamba_ssm import MambaSSMZonosBackbone
+USING_CPU = torch.device("cuda" if torch.cuda.is_available() else "cpu").type == 'cpu'
 
-    BACKBONES["mamba_ssm"] = MambaSSMZonosBackbone
-except ImportError:
-    pass
+if not USING_CPU:
+    try:
+        from ._mamba_ssm import MambaSSMZonosBackbone
+    except ImportError:
+        print("Mamba-SSM not installed, MambaSSMZonosBackbone will be unavailable.")
+else:
+    print("Running on CPU, MambaSSMZonosBackbone will be unavailable.")
 
 from ._torch import TorchZonosBackbone
 
-BACKBONES["torch"] = TorchZonosBackbone
+BACKBONES = {
+    "torch": TorchZonosBackbone,
+}
+
+if not USING_CPU:
+    try:
+        BACKBONES["mamba_ssm"] = MambaSSMZonosBackbone
+    except:
+        pass
+
+DEFAULT_BACKBONE_CLS = TorchZonosBackbone

@@ -1,0 +1,1 @@
+docker run -it -p 7860:7860 zonos-server
