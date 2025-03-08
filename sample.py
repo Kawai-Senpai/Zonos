@@ -12,7 +12,7 @@ print(f"Model loaded in {time.time() - start_time:.2f} seconds")
 
 start_time = time.time()
 print("Loading audio file...")
-wav, sampling_rate = torchaudio.load("assets/exampleaudio.mp3")
+wav, sampling_rate = torchaudio.load("assets/testsample.wav")
 print(f"Audio file loaded in {time.time() - start_time:.2f} seconds")
 
 start_time = time.time()
